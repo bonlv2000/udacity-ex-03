@@ -175,3 +175,11 @@ workflows:
             - test-backend
             - scan-backend
             - scan-frontend
+      - notify_on_failure:
+          requires:
+            - build-frontend
+            - build-backend
+            - test-frontend
+            - test-backend
+            - scan-backend
+            - scan-frontend
