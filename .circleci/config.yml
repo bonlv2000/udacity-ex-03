@@ -4,13 +4,6 @@ orbs:
   slack: circleci/slack@4.12.5 # Add the Slack orb
 
 commands:
-  notify_on_failure:
-    steps:
-      - slack/notify:
-          event: fail
-          channel: $SLACK_DEFAULT_CHANNEL
-          template: basic_fail_1
-
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
@@ -47,6 +40,15 @@ commands:
             fi
 
 jobs:
+  notify_on_failure:
+    docker:
+      - image: cimg/base:2023.07
+    steps:
+      - slack/notify:
+          event: fail
+          channel: $SLACK_DEFAULT_CHANNEL
+          template: basic_fail_1
+
   build-frontend:
     docker:
       - image: circleci/node:13.8.0
