@@ -1,6 +1,16 @@
 version: 2.1
 
+orbs:
+  slack: circleci/slack@4.12.5 # Add the Slack orb
+
 commands:
+  notify_on_failure:
+    steps:
+      - slack/notify:
+          event: fail
+          channel: $SLACK_DEFAULT_CHANNEL
+          template: basic_fail_1
+
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
@@ -35,7 +45,7 @@ commands:
             #  Add revert code here. You can find this in the Getting Started section.
               exit 1
             fi
-            
+
 jobs:
   build-frontend:
     docker:
@@ -53,6 +63,7 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+      - notify_on_failure
 
   build-backend:
     docker:
@@ -70,6 +81,7 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
+      - notify_on_failure
 
   test-frontend:
     docker:
@@ -77,51 +89,48 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [test-frontend]
+          keys: [frontend-build]
       - run:
           name: Test front-end
           command: |
             cd frontend
             npm install
             npm run test
-      - save_cache:
-          paths: [frontend/node_modules]
-          key: test-frontend
-                
+      - notify_on_failure
+
   test-backend:
     docker:
       - image: circleci/node:13.8.0
     steps:
       - checkout
       - restore_cache:
-          keys: [test-backend]
+          keys: [backend-build]
       - run:
           name: Back-end test
           command: |
             cd backend
             npm install
             npm run test
-      - save_cache:
-          paths: [backend/node_modules]
-          key: test-backend
-            
+      - notify_on_failure
+
   scan-frontend:
     docker:
       - image: circleci/node:13.8.0
     steps:
       - checkout
       - restore_cache:
-          keys: [scan-frontend]
+          keys: [frontend-build]
       - run:
           name: Scan front-end
           command: |
             cd frontend
             npm install
+            npm audit fix --audit-level=critical --force
+            # If the "npm audit fix" command above could not fix all critical vulnerabilities, try “npm audit fix --force” again
+            npm audit fix --force
             ## npm install oauth-sign@^0.9.0
             npm audit --audit-level=critical
-      - save_cache:
-          paths: [frontend/node_modules]
-          key: scan-frontend
+      - notify_on_failure
 
   scan-backend:
     docker:
@@ -129,17 +138,27 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [scan-backend]
+          keys: [backend-build]
       - run:
           name: Back-end scan
           command: |
             cd backend
             npm install
+            npm audit fix --audit-level=critical --force
+            # If the "npm audit fix" command above could not fix all critical vulnerabilities, try “npm audit fix --force” again
+            npm audit fix --force
             ## npm install oauth-sign@^0.9.0
             npm audit --audit-level=critical
-      - save_cache:
-          paths: [backend/node_modules]
-          key: scan-backend
+      - notify_on_failure
+
+  notify_on_success:
+    docker:
+      - image: cimg/base:2023.07
+    steps:
+      - slack/notify:
+          event: pass
+          channel: $SLACK_DEFAULT_CHANNEL
+          template: success_tagged_deploy_1
 
 workflows:
   default:
@@ -154,4 +173,9 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
- 
+      - notify_on_success:
+          requires:
+            - test-frontend
+            - test-backend
+            - scan-backend
+            - scan-frontend
