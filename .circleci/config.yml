@@ -112,9 +112,9 @@ jobs:
             cd backend
             npm install
             npm run test
-      - slack/notify: # Notify on failure
-          event: fail
+      - slack/notify:
           channel: $SLACK_DEFAULT_CHANNEL
+          event: fail
           template: basic_fail_1
 
   scan-frontend:
@@ -153,22 +153,14 @@ jobs:
             ## npm install oauth-sign@^0.9.0
             npm audit --audit-level=critical
 
-  # notify_on_success:
-  #   docker:
-  #     - image: cimg/base:2023.07
-  #   steps:
-  #     - slack/notify:
-  #         event: pass
-  #         channel: $SLACK_DEFAULT_CHANNEL
-  #         template: success_tagged_deploy_1
-
-  notify_on_failed1:
+  notify_on_success:
     docker:
       - image: cimg/base:2023.07
     steps:
       - slack/notify:
-          event: fail
+          event: pass
           channel: $SLACK_DEFAULT_CHANNEL
+          template: success_tagged_deploy_1
 
 workflows:
   default:
@@ -183,3 +175,9 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
+      - notify_on_failed1:
+          requires:
+            - test-frontend
+            - test-backend
+            - scan-backend
+            - scan-frontend
