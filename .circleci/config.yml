@@ -1,20 +1,9 @@
 version: 2.1
 
 orbs:
-  slack: circleci/slack@4.9.3 # Add the Slack orb
+  slack: circleci/slack@4.12.5 # Add the Slack orb
 
 commands:
-  notify_on_failure:
-    steps:
-      - run:
-          name: Debug - Notify on failure
-          command: |
-            echo "Attempting to send failure notification"
-            slack/notify:
-              event: fail
-              channel: $SLACK_DEFAULT_CHANNEL
-              template: basic_fail_1
-
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
