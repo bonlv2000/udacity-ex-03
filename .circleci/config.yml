@@ -6,10 +6,14 @@ orbs:
 commands:
   notify_on_failure:
     steps:
-      - slack/notify:
-          event: fail
-          channel: $SLACK_DEFAULT_CHANNEL
-          template: basic_fail_1
+      - run:
+          name: Debug - Notify on failure
+          command: |
+            echo "Attempting to send failure notification"
+            slack/notify:
+              event: fail
+              channel: $SLACK_DEFAULT_CHANNEL
+              template: basic_fail_1
 
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
