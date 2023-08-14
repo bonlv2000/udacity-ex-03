@@ -162,6 +162,15 @@ jobs:
           channel: $SLACK_DEFAULT_CHANNEL
           template: success_tagged_deploy_1
 
+  notify_on_failed1:
+    docker:
+      - image: cimg/base:2023.07
+    steps:
+      - slack/notify:
+          event: fail
+          channel: $SLACK_DEFAULT_CHANNEL
+          template: basic_fail_1
+
 workflows:
   default:
     jobs:
@@ -175,7 +184,7 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
-      - notify_on_success:
+      - notify_on_failed1:
           requires:
             - test-frontend
             - test-backend
