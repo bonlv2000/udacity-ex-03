@@ -38,6 +38,21 @@ commands:
             #  Add revert code here. You can find this in the Getting Started section.
               exit 1
             fi
+            
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    parameters:
+      Workflow_ID:
+        type: string
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
+    steps:
+      - run:
+          name: Destroy environments
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.Workflow_ID >>
+            aws s3 rm s3://udapeople-<<parameters.Workflow_ID>> --recursive
+            aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.Workflow_ID >>    
 
 jobs:
   build-frontend:
@@ -155,7 +170,7 @@ jobs:
           name: Install Dependencies
           command: yum install -y tar gzip
       - run:
-          name: Deploy backend infrastructure
+          name: Ensure backend infrastructure exist
           command: |
             # Use the workflow id to mark your CloudFormation stacks so that you can reference them later on (ex: rollback). 
             aws cloudformation deploy \
@@ -164,7 +179,7 @@ jobs:
                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
                 --tags project=udapeople
       - run:
-          name: Deploy frontend infrastructure
+          name: Ensure frontend infrastructure exist
           command: |
             # Use the workflow id to mark your CloudFormation stacks so that you can reference them later on (ex: rollback). 
             aws cloudformation deploy \
@@ -172,6 +187,12 @@ jobs:
                 --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
                 --tags project=udapeople
+      - run:
+          name: Add the EC2 instance IP to the Ansible inventory
+          command: |
+            BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
+            echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
 
   notify_on_success:
     docker:
