@@ -87,6 +87,10 @@ jobs:
             cd frontend
             npm install
             npm run test
+      - slack/notify:
+          channel: $SLACK_DEFAULT_CHANNEL
+          event: fail
+          template: basic_fail_1
 
   test-backend:
     docker:
@@ -141,6 +145,33 @@ jobs:
             npm audit fix --force
             ## npm install oauth-sign@^0.9.0
             npm audit --audit-level=critical
+
+  deploy-infrastructure:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: yum install -y tar gzip
+      - run:
+          name: Deploy backend infrastructure
+          command: |
+            # Use the workflow id to mark your CloudFormation stacks so that you can reference them later on (ex: rollback). 
+            aws cloudformation deploy \
+                --template-file .circleci/files/backend.yml \
+                --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
+                --tags project=udapeople
+      - run:
+          name: Deploy frontend infrastructure
+          command: |
+            # Use the workflow id to mark your CloudFormation stacks so that you can reference them later on (ex: rollback). 
+            aws cloudformation deploy \
+                --template-file .circleci/files/frontend.yml \
+                --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
+                --tags project=udapeople
 
   notify_on_success:
     docker:
