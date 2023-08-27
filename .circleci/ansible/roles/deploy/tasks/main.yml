@@ -1,30 +1,24 @@
----
-- name: "Creates backend app directory"
+- name: "Creates directory"
   file:
-    path: ~/backend-app
-    state: directory
+    path: "~/server"
+    state: "directory"
+    mode: 0755
 
-- name: "Unarchive backend files"
+- name: "Copy compressed backend folder"
+  copy:
+    src: "artifact-backend.tar.gz"
+    dest: "~/server/artifact-backend.tar.gz"
+
+- name: "Extract backend"
   unarchive:
-    src: artifact.tar.gz
-    dest: ~/backend-app
+    remote_src: yes
+    src: "~/server/artifact-backend.tar.gz"
+    dest: "~/server"
 
-- name: "Installing Node Dependencies"
-  shell: |
-    cd ~/backend-app
-    npm i
-- name: "Executing Node app with PM2"
-  shell: |
-    cd ~/backend-app/dist
-    pm2 stop default
-    pm2 start main.js
-  register: execute_node
-
-- name: print message
-  debug:
-    msg: "{{ execute_node.stdout_lines }}"
-
-- name: "Configure pm2 to start as service"
-  become: true
-  shell: |
-    env PATH=$PATH:/usr/local/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu
+- name: "Run the web server"
+  shell:
+    cmd: |
+      cd ~/server
+      npm install
+      pm2 stop default
+      pm2 start npm -- start --wait-ready
