@@ -15,9 +15,9 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            #aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.Workflow_ID >>
-            #aws s3 rm s3://udapeople-<<parameters.Workflow_ID>> --recursive
-            #aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.Workflow_ID >>
+            aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.Workflow_ID >>
+            aws s3 rm s3://udapeople-<<parameters.Workflow_ID>> --recursive
+            aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.Workflow_ID >>
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -257,7 +257,6 @@ jobs:
             echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> .env
             echo TYPEORM_PORT=$TYPEORM_PORT >> .env
             echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> .env
-            ls
             cat .env
             npm run migrations > migrations_dump.txt
             # Cat file
@@ -322,22 +321,15 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - run:
-          name: Install dependencies
+          name: Deploy backend
           command: |
             cd backend
             npm install
-      - run:
-          name: Package Backend
-          command: |
-            cd backend
             npm run build
             tar -czf artifact.tar.gz dist/* package*
             cd ..
             ## Zip the directory
             tar -C backend -czvf artifact.tar.gz .
-      - run:
-          name: Deploy backend
-          command: |
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
