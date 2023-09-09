@@ -31,7 +31,7 @@ commands:
           working_directory: ./backend
           when: on_fail
           command: |
-            SUCCESS=$(curl --insecure https://kvdb.io/${KVDB_BUCKET_ID}/migration_<< parameters.id >>)
+            SUCCESS=$(curl --insecure https://kvdb.io/${KVDB_BUCKET_ID}/migration_<< parameters.Workflow_ID >>)
             echo $SUCCESS
             if [[ "$SUCCESS" == "1" ]]
             then
