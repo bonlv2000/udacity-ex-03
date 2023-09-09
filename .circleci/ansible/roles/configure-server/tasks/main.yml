@@ -1,32 +1,24 @@
 ---
-- name: "Add Node.js from Nodesource"
-  become: true
-  shell: |
-    curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-- name: "Install Node.js 16"
-  become: true
+- name: "update and upgrade packages." # sudo apt upgrade
+  become: yes
   apt:
-    name: ["nodejs"]
+    upgrade: yes
+    update_cache: yes
+    cache_valid_time: 86400
+- name: remove unneeded deps # sudo apt autoremove
+  become: yes
+  apt:
+    autoremove: yes
+- name: install deps # sudo apt install nodejs npm
+  become: yes
+  apt:
+    name: ["nodejs", "npm"]
     state: latest
     update_cache: yes
-
-- name: "Install PM2 Globally"
+- name: install pm2 # sudo npm install pm2 -g
+  become: yes
   npm:
     name: pm2
     global: yes
-# - name: "Export env"
-#   become: true
-#   shell: |
-#     touch /etc/profile.d/env.sh
-#     echo export TYPEORM_HOST=$TYPTYPEORM_HOST >> /etc/profile.d/env.sh
-#     echo export TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> /etc/profile.d/env.sh
-#     echo export TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> /etc/profile.d/env.sh
-#     echo export TYPEORM_HOST=$TYPEORM_HOST >> /etc/profile.d/env.sh
-#     echo export TYPEORM_PORT=$TYPEORM_PORT >> /etc/profile.d/env.sh
-#     echo export TYPEORM_USERNAME=$TYPEORM_USERNAME >> /etc/profile.d/env.sh
-#     echo "export TYPEORM_PASSWORD='$TYPEORM_PASSWORD'" >> /etc/profile.d/env.sh
-#     echo export TYPEORM_DATABASE=$TYPEORM_DATABASE >> /etc/profile.d/env.sh
-#     echo export TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> /etc/profile.d/env.sh
-#     echo export TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> /etc/profile.d/env.sh
-#     . /etc/environment
-#     . ~/.bashrc
+    state: latest
+    production: yes

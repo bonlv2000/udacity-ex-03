@@ -58,14 +58,18 @@ commands:
             sudo apt install software-properties-common -y
             sudo add-apt-repository --yes --update ppa:ansible/ansible
             sudo apt install ansible -y
+
   install_nodejs:
-    description: Install Node.js 13
+    description: Install Node.js 13.8.0
     steps:
       - run:
-          name: Install Node.js 13
+          name: Install Node.js 13.8.0
           command: |
-            curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+            curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
             sudo apt install -y nodejs
+
+            sudo npm install --global n
+            sudo n 13.8.0
 
 jobs:
   build-frontend:
@@ -329,16 +333,18 @@ jobs:
           name: Package Backend
           command: |
             cd backend
+            npm install
             npm run build
-            tar -czf artifact.tar.gz dist/* package*
             cd ..
-            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
+            tar -C backend -czvf artifact.tar.gz .
+            mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
+            mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
       - run:
           name: Deploy backend
           command: |
-            export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity.js
-            export TYPEORM_MIGRATIONS=./migrations/*.js
+            export TYPEORM_MIGRATIONS_DIR=./src/migrations
+            export TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts
+            export TYPEORM_MIGRATIONS=./src/migrations/*.ts
 
             cd .circleci/ansible
             cat inventory.txt
